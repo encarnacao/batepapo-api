@@ -3,11 +3,11 @@ import cors from "cors";
 import Joi from "joi";
 import dayjs from "dayjs";
 import { MongoClient } from "mongodb";
-// Connection URI
-const uri = "mongodb://127.0.0.1:27017/";
+import dotenv from 'dotenv';
 
+dotenv.config();
 // Create a new MongoClient
-const client = new MongoClient(uri);
+const client = new MongoClient(process.env.DB_URL);
 let db;
 
 client
@@ -118,7 +118,7 @@ app.post("/participants", async (req, res) => {
 		await addParticipant(participant.name);
 		await addMessage(
 			participant.name,
-			"todos",
+			"Todos",
 			"entra na sala...",
 			"status",
 			time
@@ -138,7 +138,7 @@ function removeInactive() {
 			await removeParticipant(participant);
 			await addMessage(
 				participant,
-				"todos",
+				"Todos",
 				"sai da sala...",
 				"status",
 				time

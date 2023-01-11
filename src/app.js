@@ -3,7 +3,7 @@ import cors from "cors";
 import Joi from "joi";
 import dayjs from "dayjs";
 import { MongoClient } from "mongodb";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
 dotenv.config();
 // Create a new MongoClient
@@ -102,12 +102,16 @@ app.get("/", (_, res) => {
 	res.send("Hello World =>" + date);
 });
 
-app.get("/messages", async (req,res)=>{
-    const {limit} = req.query;
-    const {user} = req.headers;
-    const messages = await db.collection("messages").find({$or: [{to:'Todos'},{to:user}]}).limit(parseInt(limit)).toArray();
-    res.send(messages);
-})
+app.get("/messages", async (req, res) => {
+	const { limit } = req.query;
+	const { user } = req.headers;
+	const messages = await db
+		.collection("messages")
+		.find({ $or: [{ to: "Todos" }, { to: user }] })
+		.limit(parseInt(limit))
+		.toArray();
+	res.send(messages);
+});
 
 app.post("/participants", async (req, res) => {
 	const participant = req.body;
@@ -159,5 +163,5 @@ function removeInactive() {
 
 app.listen(PORT, () => {
 	console.log(`Server started on port ${PORT}`);
-    removeInactive();
+	removeInactive();
 });

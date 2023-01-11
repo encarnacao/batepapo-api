@@ -109,11 +109,17 @@ app.get("/", (_, res) => {
 app.get("/messages", async (req, res) => {
 	const { limit } = req.query;
 	const { user } = req.headers;
-	const messages = await db
+	const publicMessages = await db
 		.collection("messages")
-		.find({ $or: [{ to: "Todos" }, { to: user }] })
+		.find({ to: 'Todos' })
 		.limit(parseInt(limit))
 		.toArray();
+    const privateMessages = await db
+        .collection('messages')
+        .find({$and:[{type:'private_message'},{$or:[{to:user},{from:user}]}]})
+        .limit(parseInt(limit))
+        .toArray();
+    const messages = [...publicMessages,...privateMessages];
 	res.send(messages);
 });
 

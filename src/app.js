@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 // Create a new MongoClient
-const client = new MongoClient(process.env.DB_URL);
+const client = new MongoClient(process.env.DATABASE_URL);
 let db;
 
 client
@@ -91,7 +91,11 @@ const participantSchema = Joi.object({
 	name: Joi.string().min(1).required(),
 });
 
-const PORT = 5000;
+const messageSchema = Joi.object({
+    to: Joi.string().min(1).required(),
+    text: Joi.string().min(1).required(),
+    type: Joi.string().valid("message","private_message").required()
+});
 
 const app = express();
 app.use(cors());
@@ -112,6 +116,21 @@ app.get("/messages", async (req, res) => {
 		.toArray();
 	res.send(messages);
 });
+
+app.post("/messages", async (req,res)=>{
+    const { user } = req.headers;
+    const findUser = await db.collection("participants").findOne({name:user});
+    const message = req.body;
+    const { error } = messageSchema.validate(message);
+    if(error || !findUser){
+        res.status(422).send(error);
+        return;
+    }
+    const time = dayjs().format("HH:mm:ss");
+    const { to, text, type } = message;
+    await addMessage(user,to,text,type,time);
+    res.sendStatus(201);
+})
 
 app.post("/participants", async (req, res) => {
 	const participant = req.body;
@@ -161,7 +180,9 @@ function removeInactive() {
 	}, 15000);
 }
 
+
+const PORT = 5000;
 app.listen(PORT, () => {
 	console.log(`Server started on port ${PORT}`);
-	removeInactive();
+	//removeInactive();
 });

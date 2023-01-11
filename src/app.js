@@ -28,7 +28,7 @@ async function addMessage(from, to, text, type, time) {
 		const message = { from, to, text, type, time };
 		await messages.insertOne(message);
 	} catch {
-		console.log("Erro ao adicionar mensagem");
+		console.log("Error adding message");
 	}
 }
 
@@ -40,7 +40,7 @@ async function checkConflict(name) {
 		const participants = db.collection("participants");
 		result = await participants.findOne({ name });
 	} catch {
-		console.log("Erro ao verificar conflito");
+		console.log("Error checking conflict");
 		result = false;
 	} finally {
 		return result;
@@ -55,7 +55,7 @@ async function addParticipant(name) {
 		const participant = { name: name, lastStatus: Date.now() };
 		await participants.insertOne(participant);
 	} catch {
-		console.log("Erro ao adicionar participante");
+		console.log("Error adding participant");
 	}
 }
 

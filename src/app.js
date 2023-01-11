@@ -47,6 +47,34 @@ async function checkConflict(name) {
 	}
 }
 
+async function findInactiveParticipants(time) {
+	let result;
+	try {
+		await client.db("admin").command({ ping: 1 });
+		const db = client.db("chat");
+		const participants = db.collection("participants");
+		result = await participants
+			.find({ lastStatus: { $lt: time } })
+			.toArray();
+	} catch {
+		console.log("Error finding participants");
+		result = [];
+	} finally {
+		return result;
+	}
+}
+
+async function removeParticipant(name) {
+	try {
+		await client.db("admin").command({ ping: 1 });
+		const db = client.db("chat");
+		const participants = db.collection("participants");
+		await participants.deleteOne({ name });
+	} catch {
+		console.log("Error removing participants");
+	}
+}
+
 async function addParticipant(name) {
 	try {
 		await client.db("admin").command({ ping: 1 });
@@ -101,4 +129,23 @@ app.post("/participants", async (req, res) => {
 
 app.listen(PORT, () => {
 	console.log(`Server started on port ${PORT}`);
+	const removeInactive = setInterval(async () => {
+		let participants;
+		await findInactiveParticipants(Date.now() - 10000).then((result) => {
+			participants = result.map((participant) => participant.name);
+		});
+		const promises = participants.map(async (participant) => {
+			const time = dayjs().format("HH:mm:ss");
+			await removeParticipant(participant);
+			await addMessage(
+				participant,
+				"todos",
+				"sai da sala...",
+				"status",
+				time
+			);
+		});
+		await Promise.all(promises);
+		console.log(`Removed participants: ${participants}`);
+	}, 15000);
 });

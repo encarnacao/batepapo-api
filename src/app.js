@@ -4,49 +4,58 @@ import Joi from "joi";
 import dayjs from "dayjs";
 import { MongoClient } from "mongodb";
 // Connection URI
-const uri =
-	"mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000";
+const uri = "mongodb://127.0.0.1:27017/";
 
 // Create a new MongoClient
 const client = new MongoClient(uri);
+let db;
+
+client
+	.connect()
+	.then(() => {
+		db = client.db("chat");
+		console.log("Connected to Client");
+	})
+	.catch((err) => {
+		console.log(err);
+	});
 
 async function addMessage(from, to, text, type, time) {
 	try {
-		await client.connect();
 		await client.db("admin").command({ ping: 1 });
 		const db = client.db("chat");
 		const messages = db.collection("messages");
 		const message = { from, to, text, type, time };
 		await messages.insertOne(message);
-	} finally {
-		await client.close();
+	} catch {
+		console.log("Erro ao adicionar mensagem");
 	}
 }
 
 async function checkConflict(name) {
 	let result;
 	try {
-		await client.connect();
 		await client.db("admin").command({ ping: 1 });
 		const db = client.db("chat");
 		const participants = db.collection("participants");
 		result = await participants.findOne({ name });
+	} catch {
+		console.log("Erro ao verificar conflito");
+		result = false;
 	} finally {
-		await client.close();
 		return result;
 	}
 }
 
 async function addParticipant(name) {
 	try {
-		await client.connect();
 		await client.db("admin").command({ ping: 1 });
 		const db = client.db("chat");
 		const participants = db.collection("participants");
 		const participant = { name: name, lastStatus: Date.now() };
 		await participants.insertOne(participant);
-	} finally {
-		await client.close();
+	} catch {
+		console.log("Erro ao adicionar participante");
 	}
 }
 
@@ -92,5 +101,4 @@ app.post("/participants", async (req, res) => {
 
 app.listen(PORT, () => {
 	console.log(`Server started on port ${PORT}`);
-    
 });

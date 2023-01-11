@@ -102,6 +102,13 @@ app.get("/", (_, res) => {
 	res.send("Hello World =>" + date);
 });
 
+app.get("/messages", async (req,res)=>{
+    const {limit} = req.query;
+    const {user} = req.headers;
+    const messages = await db.collection("messages").find({$or: [{to:'Todos'},{to:user}]}).limit(parseInt(limit)).toArray();
+    res.send(messages);
+})
+
 app.post("/participants", async (req, res) => {
 	const participant = req.body;
 

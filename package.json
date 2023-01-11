@@ -5,8 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node ./src/app.js",
-    "dev": "nodemon ./src/app.js"
+    "start": "DB_URL=mongodb://127.0.0.1:27017/ node ./src/app.js",
+    "dev": "DB_URL=mongodb://127.0.0.1:27017/ nodemon ./src/app.js"
   },
   "repository": {
     "type": "git",

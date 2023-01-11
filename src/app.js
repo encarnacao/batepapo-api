@@ -127,9 +127,8 @@ app.post("/participants", async (req, res) => {
 	}
 });
 
-app.listen(PORT, () => {
-	console.log(`Server started on port ${PORT}`);
-	const removeInactive = setInterval(async () => {
+function removeInactive() {
+	setInterval(async () => {
 		let participants;
 		await findInactiveParticipants(Date.now() - 10000).then((result) => {
 			participants = result.map((participant) => participant.name);
@@ -146,6 +145,12 @@ app.listen(PORT, () => {
 			);
 		});
 		await Promise.all(promises);
+		//Maybe remove this console log once development is done
 		console.log(`Removed participants: ${participants}`);
 	}, 15000);
+}
+
+app.listen(PORT, () => {
+	console.log(`Server started on port ${PORT}`);
+    removeInactive();
 });

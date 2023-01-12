@@ -13,7 +13,7 @@ let db;
 client
 	.connect()
 	.then(() => {
-		db = client.db("chat");
+		db = client.db();
 		console.log("Connected to Client");
 	})
 	.catch((err) => {

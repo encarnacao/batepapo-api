@@ -114,7 +114,7 @@ app.get("/messages", async (req, res) => {
 		.find({
 			$or: [
 				{ type: "message" },
-                { type: "status"},
+				{ type: "status" },
 				{
 					$and: [
 						{ type: "private_message" },
@@ -123,18 +123,21 @@ app.get("/messages", async (req, res) => {
 				},
 			],
 		})
-        .sort({$natural:-1})
+		.sort({ $natural: -1 })
 		?.limit(parseInt(limit))
 		.toArray();
 	res.send(messages.reverse());
 });
 
-app.post("/status", (req,res)=>{
-    const {user} = req.headers;
-    const participant = {name: user, lastStatus: Date.now()}
-    db.collection("participants").updateOne({name: user}, {$set: participant});
-    res.sendStatus(200);
-})
+app.post("/status", (req, res) => {
+	const { user } = req.headers;
+	const participant = { name: user, lastStatus: Date.now() };
+	db.collection("participants").updateOne(
+		{ name: user },
+		{ $set: participant }
+	);
+	res.sendStatus(200);
+});
 
 app.post("/messages", async (req, res) => {
 	const { user } = req.headers;
@@ -151,6 +154,15 @@ app.post("/messages", async (req, res) => {
 	const { to, text, type } = message;
 	await addMessage(user, to, text, type, time);
 	res.sendStatus(201);
+});
+
+app.get("/participants", (_, res) => {
+	db.collection("participants")
+		.find()
+		.toArray()
+		.then((result) => {
+			res.status(200).send(result);
+		});
 });
 
 app.post("/participants", async (req, res) => {
@@ -204,5 +216,5 @@ function removeInactive() {
 const PORT = 5000;
 app.listen(PORT, () => {
 	console.log(`Server started on port ${PORT}`);
-	//removeInactive();
+	removeInactive();
 });

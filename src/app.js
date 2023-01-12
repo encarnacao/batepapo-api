@@ -92,9 +92,9 @@ const participantSchema = Joi.object({
 });
 
 const messageSchema = Joi.object({
-    to: Joi.string().min(1).required(),
-    text: Joi.string().min(1).required(),
-    type: Joi.string().valid("message","private_message").required()
+	to: Joi.string().min(1).required(),
+	text: Joi.string().min(1).required(),
+	type: Joi.string().valid("message", "private_message").required(),
 });
 
 const app = express();
@@ -109,34 +109,42 @@ app.get("/", (_, res) => {
 app.get("/messages", async (req, res) => {
 	const { limit } = req.query;
 	const { user } = req.headers;
-	const publicMessages = await db
+	const messages = await db
 		.collection("messages")
-		.find({ to: 'Todos' })
-		.limit(parseInt(limit))
+		.find({
+			$or: [
+				{ type: "message" },
+                { type: "status"},
+				{
+					$and: [
+						{ type: "private_message" },
+						{ $or: [{ to: user }, { from: user }] },
+					],
+				},
+			],
+		})
+        .sort({$natural:-1})
+		?.limit(parseInt(limit))
 		.toArray();
-    const privateMessages = await db
-        .collection('messages')
-        .find({$and:[{type:'private_message'},{$or:[{to:user},{from:user}]}]})
-        .limit(parseInt(limit))
-        .toArray();
-    const messages = [...publicMessages,...privateMessages];
-	res.send(messages);
+	res.send(messages.reverse());
 });
 
-app.post("/messages", async (req,res)=>{
-    const { user } = req.headers;
-    const findUser = await db.collection("participants").findOne({name:user});
-    const message = req.body;
-    const { error } = messageSchema.validate(message);
-    if(error || !findUser){
-        res.status(422).send(error);
-        return;
-    }
-    const time = dayjs().format("HH:mm:ss");
-    const { to, text, type } = message;
-    await addMessage(user,to,text,type,time);
-    res.sendStatus(201);
-})
+app.post("/messages", async (req, res) => {
+	const { user } = req.headers;
+	const findUser = await db
+		.collection("participants")
+		.findOne({ name: user });
+	const message = req.body;
+	const { error } = messageSchema.validate(message);
+	if (error || !findUser) {
+		res.status(422).send(error);
+		return;
+	}
+	const time = dayjs().format("HH:mm:ss");
+	const { to, text, type } = message;
+	await addMessage(user, to, text, type, time);
+	res.sendStatus(201);
+});
 
 app.post("/participants", async (req, res) => {
 	const participant = req.body;
@@ -185,7 +193,6 @@ function removeInactive() {
 		console.log(`Removed participants: ${participants}`);
 	}, 15000);
 }
-
 
 const PORT = 5000;
 app.listen(PORT, () => {

@@ -129,6 +129,13 @@ app.get("/messages", async (req, res) => {
 	res.send(messages.reverse());
 });
 
+app.post("/status", (req,res)=>{
+    const {user} = req.headers;
+    const participant = {name: user, lastStatus: Date.now()}
+    db.collection("participants").updateOne({name: user}, {$set: participant});
+    res.sendStatus(200);
+})
+
 app.post("/messages", async (req, res) => {
 	const { user } = req.headers;
 	const findUser = await db

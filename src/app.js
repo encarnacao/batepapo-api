@@ -22,8 +22,6 @@ client
 
 async function addMessage(from, to, text, type, time) {
 	try {
-		await client.db("admin").command({ ping: 1 });
-		const db = client.db("chat");
 		const messages = db.collection("messages");
 		const message = { from, to, text, type, time };
 		await messages.insertOne(message);
@@ -35,8 +33,6 @@ async function addMessage(from, to, text, type, time) {
 async function checkConflict(name) {
 	let result;
 	try {
-		await client.db("admin").command({ ping: 1 });
-		const db = client.db("chat");
 		const participants = db.collection("participants");
 		result = await participants.findOne({ name });
 	} catch {
@@ -50,8 +46,6 @@ async function checkConflict(name) {
 async function findInactiveParticipants(time) {
 	let result;
 	try {
-		await client.db("admin").command({ ping: 1 });
-		const db = client.db("chat");
 		const participants = db.collection("participants");
 		result = await participants
 			.find({ lastStatus: { $lt: time } })
@@ -66,8 +60,6 @@ async function findInactiveParticipants(time) {
 
 async function removeParticipant(name) {
 	try {
-		await client.db("admin").command({ ping: 1 });
-		const db = client.db("chat");
 		const participants = db.collection("participants");
 		await participants.deleteOne({ name });
 	} catch {
@@ -77,8 +69,6 @@ async function removeParticipant(name) {
 
 async function addParticipant(name) {
 	try {
-		await client.db("admin").command({ ping: 1 });
-		const db = client.db("chat");
 		const participants = db.collection("participants");
 		const participant = { name: name, lastStatus: Date.now() };
 		await participants.insertOne(participant);

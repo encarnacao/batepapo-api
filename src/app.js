@@ -208,6 +208,24 @@ app.delete("/messages/:id", async (req, res) => {
 	res.sendStatus(status);
 });
 
+app.put("/messages/:id", async (req, res) => {
+	const { id } = req.params;
+	const { user } = req.headers;
+	const newMessage = req.body;
+	const { error } = messageSchema.validate(newMessage);
+	if (error) {
+		res.sendStatus(422);
+		return;
+	}
+	const { status, valid } = await validateChange(id, user);
+	if (valid) {
+		await db
+			.collection("messages")
+			.updateOne({ _id: ObjectId(id) }, { $set: newMessage });
+	}
+	res.sendStatus(status);
+});
+
 function removeInactive() {
 	setInterval(async () => {
 		let participants;

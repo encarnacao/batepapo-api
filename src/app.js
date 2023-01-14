@@ -120,7 +120,7 @@ app.get("/messages", async (req, res) => {
 			],
 		})
 		.toArray();
-	res.send(messages?.slice(-parseInt(limit)));
+	res.send(messages?.slice(-parseInt(limit)).reverse());
 });
 
 app.post("/status", async (req, res) => {

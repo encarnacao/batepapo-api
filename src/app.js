@@ -92,8 +92,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
-
 app.get("/messages", async (req, res) => {
 	const limit = req.query.limit;
 	if ( limit && (isNaN(parseInt(limit)) || parseInt(limit) < 1)){
@@ -138,6 +136,9 @@ app.post("/messages", async (req, res) => {
 		.collection("participants")
 		.findOne({ name: user });
 	const message = req.body;
+	message.text = stripHtml(message.text).result.trim();
+	message.to = stripHtml(message.to).result.trim();
+	message.type = stripHtml(message.type).result.trim();
 	const { error } = messageSchema.validate(message);
 	if (error || !findUser) {
 		res.status(422).send(error);
@@ -145,7 +146,7 @@ app.post("/messages", async (req, res) => {
 	}
 	const time = dayjs().format("HH:mm:ss");
 	const { to, text, type } = message;
-	await addMessage(user, to, text, type, time);
+	await addMessage(stripHtml(user).result.trim(), to, text, type, time);
 	res.sendStatus(201);
 });
 
@@ -160,7 +161,7 @@ app.get("/participants", (_, res) => {
 
 app.post("/participants", async (req, res) => {
 	const participant = req.body;
-
+	participant.name = stripHtml(participant.name).result.trim();
 	const { error } = participantSchema.validate(participant);
 	if (error) {
 		res.sendStatus(422);

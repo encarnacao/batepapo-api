@@ -119,14 +119,17 @@ app.get("/messages", async (req, res) => {
 	res.send(messages.reverse());
 });
 
-app.post("/status", (req, res) => {
+app.post("/status", async (req, res) => {
 	const { user } = req.headers;
-	const participant = { name: user, lastStatus: Date.now() };
-	db.collection("participants").updateOne(
+	const update = await db.collection("participants").updateOne(
 		{ name: user },
-		{ $set: participant }
+		{ $set: {lastStatus: Date.now()}}
 	);
-	res.sendStatus(200);
+	if(update.matchedCount === 0) {
+		res.sendStatus(404);
+	} else{
+		res.sendStatus(200);
+	}
 });
 
 app.post("/messages", async (req, res) => {

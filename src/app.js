@@ -4,6 +4,7 @@ import Joi from "joi";
 import dayjs from "dayjs";
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
+import { stripHtml } from "string-strip-html";
 
 dotenv.config();
 // Create a new MongoClient
@@ -90,11 +91,6 @@ const messageSchema = Joi.object({
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-app.get("/", (_, res) => {
-	const date = dayjs().format("DD/MM/YYYY HH:mm:ss");
-	res.send("Hello World =>" + date);
-});
 
 
 

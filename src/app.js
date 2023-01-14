@@ -119,10 +119,8 @@ app.get("/messages", async (req, res) => {
 				},
 			],
 		})
-		.sort({ $natural: -1 })
-		?.limit(parseInt(limit))
 		.toArray();
-	res.send(messages.reverse());
+	res.send(messages?.slice(-parseInt(limit)));
 });
 
 app.post("/status", async (req, res) => {
@@ -208,7 +206,7 @@ function removeInactive() {
 		});
 		await Promise.all(promises);
 		//Maybe remove this console log once development is done
-		console.log(`Removed participants: ${participants}`);
+		//console.log(`Removed participants: ${participants}`);
 	}, 15000);
 }
 

@@ -78,6 +78,20 @@ async function addParticipant(name) {
 	}
 }
 
+async function validateChange(id, user) {
+	const message = await db
+		.collection("messages")
+		.findOne({ _id: ObjectId(id) });
+	if (!message) {
+		return { status: 404, valid: false };
+	} else if (message.from !== user) {
+		return { status: 401, valid: false };
+	} else {
+		return { status: 200, valid: true };
+	}
+}
+
+
 const participantSchema = Joi.object({
 	name: Joi.string().min(1).required(),
 });
@@ -183,22 +197,15 @@ app.post("/participants", async (req, res) => {
 	}
 });
 
+
 app.delete("/messages/:id", async (req, res) => {
 	const { id } = req.params;
 	const { user } = req.headers;
-	const message = await db
-		.collection("messages")
-		.findOne({ _id: ObjectId(id) });
-	if(!message){
-		res.sendStatus(404);
-		return;
-	} else if (message.from !== user) {
-		res.sendStatus(401);
-		return;
-	} else {
+	const { status, valid } = await validateChange(id, user);
+	if (valid) {
 		await db.collection("messages").deleteOne({ _id: ObjectId(id) });
-		res.sendStatus(200);
 	}
+	res.sendStatus(status);
 });
 
 function removeInactive() {

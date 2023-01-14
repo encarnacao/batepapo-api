@@ -96,8 +96,14 @@ app.get("/", (_, res) => {
 	res.send("Hello World =>" + date);
 });
 
+
+
 app.get("/messages", async (req, res) => {
-	const { limit } = req.query;
+	const limit = req.query.limit;
+	if ( limit && (isNaN(parseInt(limit)) || parseInt(limit) < 1)){
+		res.sendStatus(422);
+		return;
+	}
 	const { user } = req.headers;
 	const messages = await db
 		.collection("messages")

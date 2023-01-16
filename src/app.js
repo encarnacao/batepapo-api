@@ -106,122 +106,150 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/messages", async (req, res) => {
-	const limit = req.query.limit;
-	if (limit && (isNaN(parseInt(limit)) || parseInt(limit) < 1)) {
-		res.sendStatus(422);
-		return;
+	try {
+		const limit = req.query.limit;
+		if (limit && (isNaN(parseInt(limit)) || parseInt(limit) < 1)) {
+			res.sendStatus(422);
+			return;
+		}
+		const { user } = req.headers;
+		const messages = await db
+			.collection("messages")
+			.find({
+				$or: [
+					{ type: "message" },
+					{ type: "status" },
+					{
+						$and: [
+							{ type: "private_message" },
+							{ $or: [{ to: user }, { from: user }] },
+						],
+					},
+				],
+			})
+			.toArray();
+		res.send(messages?.slice(-parseInt(limit)).reverse());
+	} catch {
+		res.sendStatus(500);
 	}
-	const { user } = req.headers;
-	const messages = await db
-		.collection("messages")
-		.find({
-			$or: [
-				{ type: "message" },
-				{ type: "status" },
-				{
-					$and: [
-						{ type: "private_message" },
-						{ $or: [{ to: user }, { from: user }] },
-					],
-				},
-			],
-		})
-		.toArray();
-	res.send(messages?.slice(-parseInt(limit)).reverse());
 });
 
 app.post("/status", async (req, res) => {
-	const { user } = req.headers;
-	const update = await db
-		.collection("participants")
-		.updateOne({ name: user }, { $set: { lastStatus: Date.now() } });
-	if (update.matchedCount === 0) {
-		res.sendStatus(404);
-	} else {
-		res.sendStatus(200);
+	try {
+		const { user } = req.headers;
+		const update = await db
+			.collection("participants")
+			.updateOne({ name: user }, { $set: { lastStatus: Date.now() } });
+		if (update.matchedCount === 0) {
+			res.sendStatus(404);
+		} else {
+			res.sendStatus(200);
+		}
+	} catch {
+		res.sendStatus(500);
 	}
 });
 
 app.post("/messages", async (req, res) => {
-	const { user } = req.headers;
-	const findUser = await db
-		.collection("participants")
-		.findOne({ name: user });
-	const message = req.body;
-	const { error } = messageSchema.validate(message);
-	if (error || !findUser) {
-		res.status(422).send(error);
-		return;
+	try {
+		const { user } = req.headers;
+		const findUser = await db
+			.collection("participants")
+			.findOne({ name: user });
+		const message = req.body;
+		const { error } = messageSchema.validate(message);
+		if (error || !findUser) {
+			res.status(422).send(error);
+			return;
+		}
+		message.text = stripHtml(message.text).result.trim();
+		message.to = stripHtml(message.to).result.trim();
+		message.type = stripHtml(message.type).result.trim();
+		const time = dayjs().format("HH:mm:ss");
+		const { to, text, type } = message;
+		await addMessage(stripHtml(user).result.trim(), to, text, type, time);
+		res.sendStatus(201);
+	} catch {
+		res.sendStatus(500);
 	}
-	message.text = stripHtml(message.text).result.trim();
-	message.to = stripHtml(message.to).result.trim();
-	message.type = stripHtml(message.type).result.trim();
-	const time = dayjs().format("HH:mm:ss");
-	const { to, text, type } = message;
-	await addMessage(stripHtml(user).result.trim(), to, text, type, time);
-	res.sendStatus(201);
 });
 
 app.get("/participants", (_, res) => {
-	db.collection("participants")
-		.find()
-		.toArray()
-		.then((result) => {
-			res.status(200).send(result);
-		});
+	try {
+		db.collection("participants")
+			.find()
+			.toArray()
+			.then((result) => {
+				res.status(200).send(result);
+			});
+	} catch {
+		res.sendStatus(500);
+	}
 });
 
 app.post("/participants", async (req, res) => {
-	const participant = req.body;
-	const { error } = participantSchema.validate(participant);
-	if (error) {
-		res.sendStatus(422);
-		return;
-	}
-	participant.name = stripHtml(participant.name).result.trim();
-	const conflict = await checkConflict(participant.name);
-	if (conflict) {
-		res.sendStatus(409);
-	} else {
-		const time = dayjs().format("HH:mm:ss");
-		await addParticipant(participant.name);
-		await addMessage(
-			participant.name,
-			"Todos",
-			"entra na sala...",
-			"status",
-			time
-		);
-		res.sendStatus(201);
+	try {
+		const participant = req.body;
+		const { error } = participantSchema.validate(participant);
+		if (error) {
+			res.sendStatus(422);
+			return;
+		}
+		participant.name = stripHtml(participant.name).result.trim();
+		const conflict = await checkConflict(participant.name);
+		if (conflict) {
+			res.sendStatus(409);
+		} else {
+			const time = dayjs().format("HH:mm:ss");
+			await addParticipant(participant.name);
+			await addMessage(
+				participant.name,
+				"Todos",
+				"entra na sala...",
+				"status",
+				time
+			);
+			res.sendStatus(201);
+		}
+	} catch {
+		res.sendStatus(500);
 	}
 });
 
 app.delete("/messages/:id", async (req, res) => {
-	const { id } = req.params;
-	const { user } = req.headers;
-	const { status, valid } = await validateChange(id, user);
-	if (valid) {
-		await db.collection("messages").deleteOne({ _id: ObjectId(id) });
+	try {
+		const { id } = req.params;
+		const { user } = req.headers;
+		const { status, valid } = await validateChange(id, user);
+		if (valid) {
+			await db.collection("messages").deleteOne({ _id: ObjectId(id) });
+		}
+		res.sendStatus(status);
+	} catch {
+		res.sendStatus(500);
 	}
-	res.sendStatus(status);
 });
 
 app.put("/messages/:id", async (req, res) => {
-	const { id } = req.params;
-	const { user } = req.headers;
-	const newMessage = req.body;
-	const { error } = messageSchema.validate(newMessage);
-	if (error) {
-		res.sendStatus(422);
-		return;
+	try {
+		const { id } = req.params;
+		const { user } = req.headers;
+		const newMessage = req.body;
+		const { error } = messageSchema.validate(newMessage);
+		if (error) {
+			res.sendStatus(422);
+			return;
+		}
+		const { status, valid } = await validateChange(id, user);
+		if (valid) {
+			await db
+				.collection("messages")
+				.updateOne({ _id: ObjectId(id) }, { $set: newMessage });
+		}
+		res.sendStatus(status);
+	} catch {
+		res.sendStatus(500);
 	}
-	const { status, valid } = await validateChange(id, user);
-	if (valid) {
-		await db
-			.collection("messages")
-			.updateOne({ _id: ObjectId(id) }, { $set: newMessage });
-	}
-	res.sendStatus(status);
 });
 
 function removeInactive() {

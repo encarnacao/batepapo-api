@@ -91,7 +91,6 @@ async function validateChange(id, user) {
 	}
 }
 
-
 const participantSchema = Joi.object({
 	name: Joi.string().min(1).required(),
 });
@@ -197,7 +196,6 @@ app.post("/participants", async (req, res) => {
 	}
 });
 
-
 app.delete("/messages/:id", async (req, res) => {
 	const { id } = req.params;
 	const { user } = req.headers;
@@ -227,11 +225,15 @@ app.put("/messages/:id", async (req, res) => {
 });
 
 function removeInactive() {
+	const interval = 15000;
+	const tolerance = 10000;
 	setInterval(async () => {
 		let participants;
-		await findInactiveParticipants(Date.now() - 10000).then((result) => {
-			participants = result.map((participant) => participant.name);
-		});
+		await findInactiveParticipants(Date.now() - tolerance).then(
+			(result) => {
+				participants = result.map((participant) => participant.name);
+			}
+		);
 		const promises = participants.map(async (participant) => {
 			const time = dayjs().format("HH:mm:ss");
 			await removeParticipant(participant);
@@ -246,7 +248,7 @@ function removeInactive() {
 		await Promise.all(promises);
 		//Maybe remove this console log once development is done
 		//console.log(`Removed participants: ${participants}`);
-	}, 15000);
+	}, interval);
 }
 
 const PORT = 5000;

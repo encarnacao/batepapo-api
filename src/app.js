@@ -1,11 +1,10 @@
 import express from "express";
 import cors from "cors";
-import Joi from "joi";
 import dayjs from "dayjs";
 import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 import { stripHtml } from "string-strip-html";
-
+import { messageSchema, participantSchema } from "./schemas.js";
 dotenv.config();
 // Create a new MongoClient
 const client = new MongoClient(process.env.DATABASE_URL);
@@ -90,16 +89,6 @@ async function validateChange(id, user) {
 		return { status: 200, valid: true };
 	}
 }
-
-const participantSchema = Joi.object({
-	name: Joi.string().min(1).required(),
-});
-
-const messageSchema = Joi.object({
-	to: Joi.string().min(1).required(),
-	text: Joi.string().min(1).required(),
-	type: Joi.string().valid("message", "private_message").required(),
-});
 
 const app = express();
 app.use(cors());

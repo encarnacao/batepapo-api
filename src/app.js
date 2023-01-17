@@ -90,6 +90,13 @@ async function validateChange(id, user) {
 	}
 }
 
+function reformatBody(body){
+	for(let key in body){
+		body[key] = stripHtml(body[key]).result.trim();
+	}
+	return body;
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -145,15 +152,12 @@ app.post("/messages", async (req, res) => {
 		const findUser = await db
 			.collection("participants")
 			.findOne({ name: user });
-		const message = req.body;
+		const message = reformatBody(req.body);
 		const { error } = messageSchema.validate(message);
 		if (error || !findUser) {
 			res.status(422).send(error);
 			return;
-		}
-		message.text = stripHtml(message.text).result.trim();
-		message.to = stripHtml(message.to).result.trim();
-		message.type = stripHtml(message.type).result.trim();
+		}		
 		const time = dayjs().format("HH:mm:ss");
 		const { to, text, type } = message;
 		await addMessage(stripHtml(user).result.trim(), to, text, type, time);
@@ -178,13 +182,12 @@ app.get("/participants", (_, res) => {
 
 app.post("/participants", async (req, res) => {
 	try {
-		const participant = req.body;
+		const participant = reformatBody(req.body);
 		const { error } = participantSchema.validate(participant);
 		if (error) {
 			res.sendStatus(422);
 			return;
 		}
-		participant.name = stripHtml(participant.name).result.trim();
 		const conflict = await checkConflict(participant.name);
 		if (conflict) {
 			res.sendStatus(409);

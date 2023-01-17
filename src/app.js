@@ -117,7 +117,7 @@ app.get("/messages", async (req, res) => {
 				],
 			})
 			.toArray();
-		res.send(messages?.slice(-parseInt(limit)).reverse());
+		res.send(messages?.slice(-parseInt(limit)));
 	} catch {
 		res.sendStatus(500);
 	}
